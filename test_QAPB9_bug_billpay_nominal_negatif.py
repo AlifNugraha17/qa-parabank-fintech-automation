@@ -4,10 +4,17 @@ Summary: [Bill Pay Payment Integrity] System allows bill payment with $0.00 and 
 """
 
 import os
+import sys
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 
 def test_QAPB9_bug_billpay_nominal_negatif():
@@ -32,6 +39,14 @@ def test_QAPB9_bug_billpay_nominal_negatif():
         driver.find_element(By.NAME, "password").send_keys(password)
         driver.find_element(By.CSS_SELECTOR, "input[value='Log In']").click()
         time.sleep(1.5)
+
+        # Fallback login jika akun custom sesi sebelumnya telah kedaluwarsa di server demo
+        if len(driver.find_elements(By.LINK_TEXT, "Bill Pay")) == 0:
+            driver.get("https://parabank.parasoft.com/parabank/index.htm")
+            driver.find_element(By.NAME, "username").send_keys("john")
+            driver.find_element(By.NAME, "password").send_keys("demo")
+            driver.find_element(By.CSS_SELECTOR, "input[value='Log In']").click()
+            time.sleep(1.5)
 
         # 1. Buka menu Bill Pay
         driver.find_element(By.LINK_TEXT, "Bill Pay").click()
@@ -58,6 +73,8 @@ def test_QAPB9_bug_billpay_nominal_negatif():
 
         # 5. Cek apakah transaksi tagihan minus berhasil diproses
         hasil_pembayaran = driver.find_element(By.ID, "billpayResult").text
+        print("\n🔍 HASIL YANG DITAMPILKAN DI LAYAR:")
+        print(hasil_pembayaran)
 
         assert "Bill Payment Complete" not in hasil_pembayaran, (
             "[CRITICAL FINANCIAL BUG DITEMUKAN!] "

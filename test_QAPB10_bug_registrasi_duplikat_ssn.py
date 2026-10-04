@@ -3,11 +3,18 @@ TIKET JIRA: QAPB-10 (BUG DEFECT)
 Summary: [Identity Theft / AML Risk] System accepts duplicate Social Security Number (SSN) during onboarding
 """
 
+import sys
 import time
 import random
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 
 def test_QAPB10_bug_registrasi_duplikat_ssn():
@@ -27,10 +34,10 @@ def test_QAPB10_bug_registrasi_duplikat_ssn():
         # Buat username acak baru
         angka_acak = random.randint(1000, 9999)
         username_baru = f"nasabah_kloning_{angka_acak}"
-        # Gunakan nomor identitas SSN yang sama persis (SSN duplikat)
-        ssn_duplikat = "987-65-4321"
+        # Gunakan nomor identitas SSN yang sudah pasti aktif di database (SSN Bob Parasoft: 123456789)
+        ssn_duplikat = "123456789"
 
-        print(f"👤 Mendaftarkan nasabah baru dengan SSN yang sudah ada: {ssn_duplikat}")
+        print(f"👤 Mendaftarkan nasabah baru dengan SSN yang sudah ada di database: {ssn_duplikat}")
 
         # 1. Isi Formulir Pendaftaran dengan SSN duplikat
         driver.find_element(By.ID, "customer.firstName").send_keys("Budi")
@@ -55,6 +62,8 @@ def test_QAPB10_bug_registrasi_duplikat_ssn():
         # Regulasi AML & Perbankan: 1 nomor KTP/SSN hanya boleh memiliki 1 CIF (Customer Identification File).
         # Sistem perbankan harus menolak jika SSN sudah terdaftar di sistem.
         pesan_respon = driver.find_element(By.ID, "rightPanel").text
+        print("\n🔍 HASIL YANG DITAMPILKAN DI LAYAR:")
+        print(pesan_respon)
 
         assert "Your account was created successfully" not in pesan_respon, (
             "[CRITICAL REGULATORY BUG DITEMUKAN!] "
